@@ -1,11 +1,10 @@
-import { db } from "../database/database.connection";
+import { Router } from "express";
+import { getGames, newGame } from "../controllers/jogos.controllers.js";
 
-export async function newGame(req, res) {
-  const { name, image, stockTotal, pricePerDay } = req.body;
 
-  await db.query(
-    "INSERT INTO games (name, image, 'stock_total', 'price_per_day') VALUES ($1, $2, $3, $4)",
-    [name, image, stockTotal, pricePerDay]
-  );
-  res.sendStatus(201);
-}
+const gamesRouter = Router();
+
+gamesRouter.post("/games", newGame)
+gamesRouter.get("/games", getGames)
+
+export default gamesRouter
