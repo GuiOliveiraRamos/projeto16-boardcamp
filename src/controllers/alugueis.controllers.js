@@ -13,19 +13,18 @@ export async function getAllRentals(req, res) {
 export async function newRental(req, res) {
   const { customerId, gameId, daysRented } = req.body;
   const rentDate = new Date();
-  const pricePerDay = game.rows[0].pricePerDay;
-  const originalPrice = daysRented * pricePerDay;
   const game = await db.query(
     `SELECT "pricePerDay" FROM games WHERE "gameId" = $1;`,
     [gameId]
   );
-
+  const pricePerDay = game.rows[0].pricePerDay;
+  const originalPrice = daysRented * pricePerDay;
   const client = await db.query(
-    `SELECT * FROM customers WHERE customerId = $1;`,
+    `SELECT * FROM customers WHERE "customerId" = $1;`,
     [customerId]
   );
   const alreadyExists = await db.query(
-    `SELECT * FROM rentals WHERE "customerId" = $1 AND gameId = $2 AND daysRented = $3;`,
+    `SELECT * FROM rentals WHERE "customerId" = $1 AND "gameId" = $2 AND daysRented = $3;`,
     [customerId, gameId, daysRented]
   );
   try {
@@ -48,7 +47,8 @@ export async function newRental(req, res) {
     const delayFee = null;
 
     await db.query(
-      `INSERT INTO rentals (customerId, gameId, daysRented, rentDate, originalPrice, returnDate, delayFee) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+      `INSERT INTO rentals ("customerId", "gameId", "daysRented", "rentDate", "originalPrice", "returnDate", "delayFee") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7);`,
       [
         customerId,
         gameId,
