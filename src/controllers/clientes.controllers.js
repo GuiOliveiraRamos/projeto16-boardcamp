@@ -45,8 +45,11 @@ export async function getCustomersById(req, res) {
     const customer = await db.query(`SELECT * FROM customers WHERE id = $1;`, [
       id,
     ]);
-    if (customer.rowCount === 0) return res.sendStatus(404);
-
+    if (customer.rows.length < 1) return res.sendStatus(404);
+    customer.rows = customer.rows.map((c) => ({
+      ...c,
+      birthday: new Date(c.birthday).toISOString().slice(0, 10),
+    }));
     res.send(customer.rows[0]);
   } catch (err) {
     res.status(500).send(err.message);
