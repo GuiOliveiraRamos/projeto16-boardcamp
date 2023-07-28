@@ -86,12 +86,13 @@ export async function newRental(req, res) {
     const originalPrice = daysRented * pricePerDay;
 
     await db.query(
-      `INSERT INTO rentals ("customerId", "gameId", "daysRented", "rentDate", "originalPrice", "returnDate", "delayFee") 
-      VALUES ($1, $2, $3, $4, null, $5, null);`,
-      [customerId, gameId, daysRented, rentDate, originalPrice]
+      `INSERT INTO rentals ("id", "customerId","gameId", "rentDate", "daysRented", "returnDate","originalPrice", "delayFee") 
+      VALUES (default, $1, $2, $3, $4, null, $5, null);`,
+      [customerId, gameId, rentDate, daysRented, originalPrice]
     );
     res.sendStatus(201);
   } catch (err) {
+    console.log("teste");
     res.status(500).send(err.message);
   }
 }
@@ -129,5 +130,20 @@ export async function endRental(req, res) {
     res.sendStatus(200);
   } catch (err) {
     res.status(500).send(err.message);
+  }
+}
+
+export async function deleteRentals(req, res) {
+  const { id } = req.params;
+
+  try {
+    const rental = await db.query(`SELECT * FROM rentals WHERE id = $1;`, [id]);
+    if (rental.rows.length < 1) return res.sendStatus(404);
+    if (rental.rows[0].returnDate === null) return res.sendStatus(400);
+
+    await db.query(`DELETE FROM rentals WHERE id = $1;`, [id]);
+    res.sendStatus(200);
+  } catch (err) {
+    res.send(err.message);
   }
 }
