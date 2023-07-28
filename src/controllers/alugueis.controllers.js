@@ -61,12 +61,12 @@ export async function newRental(req, res) {
     if (daysRented <= 0) return res.send(400);
 
     const game = await db.query(`SELECT * FROM games WHERE id = $1;`, [gameId]);
-    if (game.rowCount === 0) return res.sendStatus(402);
+    if (game.rowCount === 0) return res.sendStatus(400);
 
     const client = await db.query(`SELECT * FROM customers WHERE id = $1;`, [
       customerId,
     ]);
-    if (client.rowCount === 0) return res.sendStatus(401);
+    if (client.rowCount === 0) return res.sendStatus(400);
 
     const alreadyExists = await db.query(
       `SELECT * FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
@@ -80,7 +80,7 @@ export async function newRental(req, res) {
       daysRented,
     });
 
-    if (validation.error) return res.sendStatus(403);
+    if (validation.error) return res.sendStatus(400);
 
     const pricePerDay = game.rows[0].pricePerDay;
     const originalPrice = daysRented * pricePerDay;
@@ -139,7 +139,6 @@ export async function deleteRentals(req, res) {
   try {
     const rental = await db.query(`SELECT * FROM rentals WHERE id = $1;`, [id]);
     if (rental.rows.length < 1) return res.sendStatus(404);
-    if (rental.rows[0].returnDate === null) return res.sendStatus(400);
 
     await db.query(`DELETE FROM rentals WHERE id = $1;`, [id]);
     res.sendStatus(200);
