@@ -14,11 +14,9 @@ export async function newCustomer(req, res) {
     );
     if (alreadyExists.rowCount > 0) return res.sendStatus(409);
 
-    const formattedBirthday = dayjs(birthday).format("YYYY-MM-DD");
-
     await db.query(
       `INSERT INTO customers (name, phone,cpf,birthday) VALUES ($1, $2, $3, $4);`,
-      [name, phone, cpf, formattedBirthday]
+      [name, phone, cpf, birthday]
     );
     res.sendStatus(201);
   } catch (err) {
@@ -29,7 +27,14 @@ export async function newCustomer(req, res) {
 export async function getCustomers(req, res) {
   try {
     const customers = await db.query(`SELECT * FROM customers;`);
-    res.send(customers.rows);
+    const formattedCustomers = customers.rows.map((customer) => {
+      const formattedBirthday = dayjs(customer.birthday).format("YYYY-MM-DD");
+      return {
+        ...customer,
+        birthday: formattedBirthday,
+      };
+    });
+    res.send(formattedCustomers);
   } catch (err) {
     res.status(500).send(err.message);
   }
