@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { db } from "../database/database.connection.js";
 import { schemaCustomers } from "../schemas/customers.schemas.js";
 
@@ -5,19 +6,19 @@ export async function newCustomer(req, res) {
   const { name, phone, cpf, birthday } = req.body;
   try {
     const validation = schemaCustomers.validate({ name, phone, cpf, birthday });
-    if (validation.error) {
-      return res.sendStatus(400);
-    }
+    if (validation.error) return res.sendStatus(400);
+
     const alreadyExists = await db.query(
       `SELECT * FROM customers WHERE cpf = $1;`,
       [cpf]
     );
-    if (alreadyExists.rowCount > 0) {
-      return res.sendStatus(409);
-    }
+    if (alreadyExists.rowCount > 0) return res.sendStatus(409);
+
+    const formattedBirthday = dayjs(birthday).format("YYYY-MM-DD");
+
     await db.query(
       `INSERT INTO customers (name, phone,cpf,birthday) VALUES ($1, $2, $3, $4);`,
-      [name, phone, cpf, birthday]
+      [name, phone, cpf, formattedBirthday]
     );
     res.sendStatus(201);
   } catch (err) {
