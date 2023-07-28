@@ -39,9 +39,9 @@ export async function getAllRentals(req, res) {
         id,
         customerId,
         gameId,
-        rentDate,
+        rentDate: new Date(rentDate).toISOString().slice(0, 10),
         daysRented,
-        returnDate,
+        returnDate: new Date(returnDate).toISOString().slice(0, 10),
         originalPrice,
         delayFee,
         customer,
@@ -57,7 +57,7 @@ export async function getAllRentals(req, res) {
 export async function newRental(req, res) {
   const { customerId, gameId, daysRented } = req.body;
   try {
-    const rentDate = new Date();
+    const rentDate = new Date().toISOString().slice(0, 10);
     if (daysRented <= 0) return res.send(400);
 
     const game = await db.query(`SELECT * FROM games WHERE id = $1;`, [gameId]);
