@@ -107,25 +107,26 @@ export async function endRental(req, res) {
     ]);
     if (rental.rowCount === 0) return res.sendStatus(404);
 
-    const { rentDate, daysRented, gameId } = rental.rows[0];
-    const { pricePerDay } = await db.query(
-      `SELECT "pricePerDay" FROM games WHERE "id" = $1;`,
-      [gameId]
-    );
+    if (rental.rows[0].returnDate !== null) return res.sendStatus(400);
 
-    const daysOverdue = Math.max(
-      Math.floor(
-        (Date.now() -
-          new Date(rentDate).getTime() -
-          daysRented * 24 * 60 * 60 * 1000) /
-          (24 * 60 * 60 * 1000)
-      ),
-      0
+    const game = await db.query(`SELECT * FROM games WHERE id = $1`, [
+      rental.rows[0].gameId,
+    ]);
+
+    const delayTime = Math.abs(
+      new Date().getTime() - rental.rows[0].rentDate.getTime()
     );
-    const delayFee = daysOverdue * pricePerDay;
+    const delayDays = Math.floor(delayTime / (1000 * 60 * 60 * 24));
+    let delayFee = null;
+
+    if (delayDays > rental.rows[0].daysRented) {
+      delayFee =
+        (delayDays - rental.rows[0].daysRented) * game.rows[0].pricePerDay;
+    }
+
     await db.query(
-      `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2 WHERE "id" = $3;`,
-      [returnDate, delayFee, id]
+      `UPDATE rentals SET "id" = $1, "returnDate" = $2 WHERE "delayFee" = $3;`,
+      [id, returnDate, delayFee]
     );
     res.sendStatus(200);
   } catch (err) {
