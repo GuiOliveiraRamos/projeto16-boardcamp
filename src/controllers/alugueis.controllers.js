@@ -39,9 +39,9 @@ export async function getAllRentals(req, res) {
         id,
         customerId,
         gameId,
-        rentDate: new Date(rentDate).toISOString().slice(0, 10),
+        rentDate,
         daysRented,
-        returnDate: new Date(returnDate).toISOString().slice(0, 10),
+        returnDate,
         originalPrice,
         delayFee,
         customer,
@@ -72,7 +72,7 @@ export async function newRental(req, res) {
       `SELECT * FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
       [gameId]
     );
-    if (alreadyExists.rowCount > 0) return res.sendStatus(409);
+    if (alreadyExists.rowCount > 0) return res.sendStatus(400);
 
     const validation = schemaRentals.validate({
       customerId,
