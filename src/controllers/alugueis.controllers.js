@@ -56,21 +56,24 @@ export async function getAllRentals(req, res) {
 
 export async function newRental(req, res) {
   const { customerId, gameId, daysRented } = req.body;
-  const rentDate = new Date();
-  const game = await db.query(
-    `SELECT "pricePerDay" FROM games WHERE id = $1;`,
-    [gameId]
-  );
-  const pricePerDay = game.rows[0].pricePerDay;
-  const originalPrice = daysRented * pricePerDay;
-  const client = await db.query(`SELECT * FROM customers WHERE id = $1;`, [
-    customerId,
-  ]);
-  const alreadyExists = await db.query(
-    `SELECT * FROM rentals WHERE "customerId" = $1 AND "gameId" = $2 AND "daysRented" = $3;`,
-    [customerId, gameId, daysRented]
-  );
   try {
+    const rentDate = new Date();
+    if (daysRented <= 0) return res.send(400);
+
+    const game = await db.query(`SELECT * FROM games WHERE id = $1;`, [gameId]);
+    if (game.rowCount === 0) return res.sendStatus(402);
+
+    const client = await db.query(`SELECT * FROM customers WHERE id = $1;`, [
+      customerId,
+    ]);
+    if (client.rowCount === 0) return res.sendStatus(401);
+
+    const alreadyExists = await db.query(
+      `SELECT * FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
+      [gameId]
+    );
+    if (alreadyExists.rowCount > 0) return res.sendStatus(409);
+
     const validation = schemaRentals.validate({
       customerId,
       gameId,
@@ -79,28 +82,13 @@ export async function newRental(req, res) {
 
     if (validation.error) return res.sendStatus(403);
 
-    if (game.rowCount === 0) return res.sendStatus(402);
-
-    if (client.rowCount === 0) return res.sendStatus(401);
-
-    if (alreadyExists.rowCount > 0) return res.sendStatus(409);
-
-    if (daysRented <= 0) return res.send(400);
-    const returnDate = null;
-    const delayFee = null;
+    const pricePerDay = game.rows[0].pricePerDay;
+    const originalPrice = daysRented * pricePerDay;
 
     await db.query(
       `INSERT INTO rentals ("customerId", "gameId", "daysRented", "rentDate", "originalPrice", "returnDate", "delayFee") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7);`,
-      [
-        customerId,
-        gameId,
-        daysRented,
-        rentDate,
-        originalPrice,
-        returnDate,
-        delayFee,
-      ]
+      VALUES ($1, $2, $3, $4, null, $5, null);`,
+      [customerId, gameId, daysRented, rentDate, originalPrice]
     );
     res.sendStatus(201);
   } catch (err) {

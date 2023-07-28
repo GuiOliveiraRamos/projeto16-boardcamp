@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { db } from "../database/database.connection.js";
 import { schemaCustomers } from "../schemas/customers.schemas.js";
 
@@ -8,6 +7,9 @@ export async function newCustomer(req, res) {
     const validation = schemaCustomers.validate({ name, phone, cpf, birthday });
     if (validation.error) return res.sendStatus(400);
 
+    const getBirthday = new Date(birthday);
+    const formartBirthday = getBirthday.toISOString().substring(0, 10);
+
     const alreadyExists = await db.query(
       `SELECT * FROM customers WHERE cpf = $1;`,
       [cpf]
@@ -16,7 +18,7 @@ export async function newCustomer(req, res) {
 
     await db.query(
       `INSERT INTO customers (name, phone,cpf,birthday) VALUES ($1, $2, $3, $4);`,
-      [name, phone, cpf, birthday]
+      [name, phone, cpf, formartBirthday]
     );
     res.sendStatus(201);
   } catch (err) {
@@ -26,15 +28,12 @@ export async function newCustomer(req, res) {
 
 export async function getCustomers(req, res) {
   try {
-    const customers = await db.query(`SELECT * FROM customers;`);
-    const formattedCustomers = customers.rows.map((customer) => {
-      const formattedBirthday = dayjs(customer.birthday).format("YYYY-MM-DD");
-      return {
-        ...customer,
-        birthday: formattedBirthday,
-      };
-    });
-    res.send(formattedCustomers);
+    const customers = await db.query(
+      "SELECT id, name, phone, cpf, TO_CHAR(birthday, 'YYYY-MM-DD') as birthday FROM customers"
+    );
+    if (!customers.rows.length) return res.sendStatus(404);
+
+    res.send(customers.rows);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -62,8 +61,13 @@ export async function updateCustomer(req, res) {
       id,
     ]);
     if (customer.rowCount === 0) return res.sendStatus(404);
+
     const validation = schemaCustomers.validate({ name, phone, cpf, birthday });
     if (validation.error) return res.sendStatus(400);
+
+    const getBirthday = new Date(birthday);
+    const formartBirthday = getBirthday.toISOString().substring(0, 10);
+
     const alreadyExists = await db.query(
       `SELECT * FROM customers WHERE cpf = $1 AND id <> $2;`,
       [cpf, id]
@@ -72,7 +76,7 @@ export async function updateCustomer(req, res) {
 
     await db.query(
       `UPDATE customers SET name = $1, phone = $2, cpf = $3, birthday = $4 WHERE id = $5;`,
-      [name, phone, cpf, birthday, id]
+      [name, phone, cpf, formartBirthday, id]
     );
     res.sendStatus(200);
   } catch (err) {
