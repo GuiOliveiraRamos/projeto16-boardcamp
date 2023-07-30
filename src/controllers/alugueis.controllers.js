@@ -2,23 +2,26 @@ import { db } from "../database/database.connection.js";
 import { schemaRentals } from "../schemas/rentals.schemas.js";
 export async function getAllRentals(req, res) {
   try {
-    const rentalData = await db.query(`SELECT 
-    rentals.id, 
-    rentals."customerId", 
-    rentals."gameId", 
-    rentals."rentDate", 
-    rentals."daysRented", 
-    rentals."returnDate", 
-    rentals."originalPrice", 
-    rentals."delayFee", 
-    customers.id AS "customerId",
-    customers.name AS "nomeCliente", 
-    game.id AS "idJogo",
-    games.name AS "nomeJogo"
-  FROM 
-    rentals 
-    JOIN customers ON rentals."customerId" = customers.id 
-    JOIN games ON rentals."gameId" = games.id;`);
+    const rentalData = await db.query(`  SELECT 
+    r.id,
+    r."customerId",
+    r."gameId",
+    r."rentDate",
+    r."daysRented",
+    r."returnDate",
+    r."originalPrice",
+    r."delayFee",
+    c.id AS "customer.id",
+    c.name AS "customer.name",
+    g.id AS "game.id",
+    g.name AS "game.name"
+FROM 
+    rentals r
+JOIN
+    customers c ON r."customerId" = c.id
+JOIN
+    games g ON r."gameId" = g.id;
+`);
 
     const rentals = rentalData.rows.map((rental) => ({
       id: rental.id,
