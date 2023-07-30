@@ -11,14 +11,14 @@ export async function getAllRentals(req, res) {
     rentals."returnDate", 
     rentals."originalPrice", 
     rentals."delayFee", 
-    customer.name AS "nomeCliente", 
-    customer.id AS "idCliente",
+    customers.id AS "customerId",
+    customers.name AS "nomeCliente", 
     game.id AS "idJogo",
-    game.name AS "nomeJogo"
+    games.name AS "nomeJogo"
   FROM 
     rentals 
-    JOIN customers ON rentals."customerId" = customer.id 
-    JOIN games ON rentals."gameId" = game.id;`);
+    JOIN customers ON rentals."customerId" = customers.id 
+    JOIN games ON rentals."gameId" = games.id;`);
 
     const rentals = rentalData.rows.map((rental) => ({
       id: rental.id,
@@ -30,14 +30,15 @@ export async function getAllRentals(req, res) {
       originalPrice: rental.originalPrice,
       delayFee: rental.delayFee,
       customer: {
-        id: rental["idCliente"],
-        name: rental["nomeCliente"],
+        id: rental["customer.id"],
+        name: rental["customer.name"],
       },
       game: {
-        id: rental["idJogo"],
-        name: rental["nomeJogo"],
+        id: rental["game.id"],
+        name: rental["game.name"],
       },
     }));
+
     res.send(rentals);
   } catch (err) {
     res.status(500).send(err.message);
